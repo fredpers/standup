@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'widgets/watercounter.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -104,6 +106,9 @@ class _MyHomePageState extends State<MyHomePage> {
               '$_counter',
               style: Theme.of(context).textTheme.headline4,
             ),
+            // Skapar bubblan som räknar ner, bör läggas i en InkWell så att vi kan definera en onclick osv
+            Container(),
+            WaterCountdown(),
           ],
         ),
       ),
