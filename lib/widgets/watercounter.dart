@@ -3,22 +3,33 @@ import 'dart:ui';
 import 'dart:math' as math;
 
 class WaterCountdown extends StatefulWidget {
-  WaterCountdown({Key key, this.duration}) : super(key: key);
+  WaterCountdown({Key key, this.duration, this.onComplete}) : super(key: key);
 
   final Duration duration;
+  final Function onComplete;
+  _WaterCountdownState state;
+
+  void startCountdown() {
+    state.startCountdown();
+  }
 
   @override
-  _WaterCountdownState createState() => _WaterCountdownState();
+  _WaterCountdownState createState() {
+    state = _WaterCountdownState(duration, onComplete);
+    return state;
+  }
 }
 
 class _WaterCountdownState extends State<WaterCountdown>
     with SingleTickerProviderStateMixin {
-  @override
-  Widget build(BuildContext context) {
-    return AutomatedAnimator(
-      animateToggle: true,
+  AutomatedAnimator automatedAnimator;
+
+  _WaterCountdownState(Duration duration, Function onComplete) {
+    automatedAnimator = AutomatedAnimator(
+      animateToggle: false,
       doRepeatAnimation: false,
-      duration: widget.duration,
+      duration: duration,
+      onComplete: onComplete,
       buildWidget: (double animationPosition) {
         return WaveLoadingBubble(
           foregroundWaveColor: Color(0xFF6AA0E1),
@@ -41,6 +52,15 @@ class _WaterCountdownState extends State<WaterCountdown>
       },
     );
   }
+
+  void startCountdown() {
+    automatedAnimator.startAnimation();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return automatedAnimator;
+  }
 }
 
 class AutomatedAnimator extends StatefulWidget {
@@ -49,16 +69,27 @@ class AutomatedAnimator extends StatefulWidget {
     @required this.animateToggle,
     this.duration = const Duration(milliseconds: 900),
     this.doRepeatAnimation = false,
+    this.onComplete,
     Key key,
   }) : super(key: key);
 
   final Widget Function(double animationValue) buildWidget;
   final Duration duration;
-  final bool animateToggle;
+  bool animateToggle;
   final bool doRepeatAnimation;
+  final Function onComplete;
+
+  _AutomatedAnimatorState animatorState;
+
+  void startAnimation(){
+    animatorState.startAnimation();
+  }
 
   @override
-  _AutomatedAnimatorState createState() => _AutomatedAnimatorState();
+  _AutomatedAnimatorState createState() {
+    animatorState = _AutomatedAnimatorState();
+    return animatorState;
+  }
 }
 
 class _AutomatedAnimatorState extends State<AutomatedAnimator>
@@ -67,11 +98,22 @@ class _AutomatedAnimatorState extends State<AutomatedAnimator>
 
   AnimationController controller;
 
+  void startAnimation() {
+    controller.forward();
+  }
+
   @override
   void initState() {
     super.initState();
     controller = AnimationController(vsync: this, duration: widget.duration)
-      ..addListener(() => setState(() {}));
+      ..addListener(() => setState(() {}))
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          controller.reverseDuration = Duration(seconds: 1);
+          controller.reverse().then((value) => widget.onComplete());
+          widget.animateToggle = false;
+        }
+      });
     if (widget.animateToggle == true) controller.forward();
     if (widget.doRepeatAnimation == true) controller.repeat();
   }
@@ -88,6 +130,9 @@ class _AutomatedAnimatorState extends State<AutomatedAnimator>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.animateToggle == true) {
+      controller.forward();
+    }
     return widget.buildWidget(controller.value);
   }
 }
@@ -113,9 +158,9 @@ double reversingSplitParameters({
   @required double reversalPoint,
 }) {
   assert(reversalPoint <= 1.0 && reversalPoint >= 0.0,
-      "reversalPoint must be a number between 0.0 and 1.0");
+  "reversalPoint must be a number between 0.0 and 1.0");
   final double finalAnimationPosition =
-      breakAnimationPosition(position, numberBreaks);
+  breakAnimationPosition(position, numberBreaks);
 
   if (finalAnimationPosition <= 0.5) {
     return parameterBase - (finalAnimationPosition * 2 * parameterVariation);
@@ -182,25 +227,23 @@ class WaveLoadingBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomPaint(
       painter: WaveLoadingBubblePainter(
-        bubbleDiameter: bubbleDiameter,
-        loadingCircleWidth: loadingCircleWidth,
-        waveInsetWidth: waveInsetWidth,
-        waveHeight: waveHeight,
-        foregroundWaveColor: foregroundWaveColor,
-        backgroundWaveColor: backgroundWaveColor,
-        loadingWheelColor: loadingWheelColor,
-        foregroundWaveVerticalOffset: foregroundWaveVerticalOffset,
-        backgroundWaveVerticalOffset: backgroundWaveVerticalOffset,
-        period: period,
-        duration: duration
-      ),
+          bubbleDiameter: bubbleDiameter,
+          loadingCircleWidth: loadingCircleWidth,
+          waveInsetWidth: waveInsetWidth,
+          waveHeight: waveHeight,
+          foregroundWaveColor: foregroundWaveColor,
+          backgroundWaveColor: backgroundWaveColor,
+          loadingWheelColor: loadingWheelColor,
+          foregroundWaveVerticalOffset: foregroundWaveVerticalOffset,
+          backgroundWaveVerticalOffset: backgroundWaveVerticalOffset,
+          period: period,
+          duration: duration),
     );
   }
 }
 
 class WaveLoadingBubblePainter extends CustomPainter {
-  WaveLoadingBubblePainter({
-    this.bubbleDiameter,
+  WaveLoadingBubblePainter({this.bubbleDiameter,
     this.loadingCircleWidth,
     this.waveInsetWidth,
     this.waveHeight,
@@ -210,9 +253,11 @@ class WaveLoadingBubblePainter extends CustomPainter {
     this.foregroundWaveVerticalOffset,
     this.backgroundWaveVerticalOffset,
     this.period,
-    this.duration
-  })  : foregroundWavePaint = Paint()..color = foregroundWaveColor,
-        backgroundWavePaint = Paint()..color = backgroundWaveColor,
+    this.duration})
+      : foregroundWavePaint = Paint()
+    ..color = foregroundWaveColor,
+        backgroundWavePaint = Paint()
+          ..color = backgroundWaveColor,
         loadingCirclePaint = Paint()
           ..shader = SweepGradient(
             colors: [
@@ -254,22 +299,22 @@ class WaveLoadingBubblePainter extends CustomPainter {
       amplitude: waveHeight,
       period: 1.0,
       startPoint:
-          Offset(0.0 - waveBubbleRadius, 0.0 + backgroundWaveVerticalOffset),
+      Offset(0.0 - waveBubbleRadius, 0.0 + backgroundWaveVerticalOffset),
       width: bubbleDiameter,
       crossAxisEndPoint: waveBubbleRadius,
       doClosePath: true,
-      phaseShift: period * 2 * duration.inSeconds/3,
+      phaseShift: period * 2 * duration.inSeconds / 3,
     ).build();
 
     Path foregroundWavePath = WavePathHorizontal(
       amplitude: waveHeight,
       period: 1.0,
       startPoint:
-          Offset(0.0 - waveBubbleRadius, 0.0 + foregroundWaveVerticalOffset),
+      Offset(0.0 - waveBubbleRadius, 0.0 + foregroundWaveVerticalOffset),
       width: bubbleDiameter,
       crossAxisEndPoint: waveBubbleRadius,
       doClosePath: true,
-      phaseShift: -period * 2 *  duration.inSeconds/3,
+      phaseShift: -period * 2 * duration.inSeconds / 3,
     ).build();
 
     Path circleClip = Path()
@@ -298,8 +343,10 @@ class WaveLoadingBubblePainter extends CustomPainter {
           loadingBubbleRadius,
           loadingBubbleRadius,
           loadingBubbleRadius));
-    Paint outerCirclePaint = Paint()..color = Colors.black12;
-    Paint innerContainer = Paint()..color = Colors.white;
+    Paint outerCirclePaint = Paint()
+      ..color = Colors.black12;
+    Paint innerContainer = Paint()
+      ..color = Colors.white;
     canvas.drawPath(outerCircleClip, outerCirclePaint);
     canvas.drawPath(circleClip, innerContainer);
     canvas.clipPath(circleClip, doAntiAlias: true);
@@ -310,12 +357,12 @@ class WaveLoadingBubblePainter extends CustomPainter {
 
   void drawClockTime(Canvas canvas, Path backgroundPath) {
     double secondsPassed = period * duration.inSeconds;
-    Duration timeLeft =
-        duration - Duration(seconds: secondsPassed.round());
+    Duration timeLeft = duration - Duration(seconds: secondsPassed.round());
     TextSpan span = new TextSpan(
         text: _printDuration(timeLeft), style: TextStyle(fontSize: 40));
     TextSpan blackSpan = new TextSpan(
-        text: _printDuration(timeLeft), style: TextStyle(fontSize: 40, color: Colors.black));
+        text: _printDuration(timeLeft),
+        style: TextStyle(fontSize: 40, color: Colors.black));
     TextPainter tp = new TextPainter(
         text: span,
         textAlign: TextAlign.left,
@@ -357,7 +404,7 @@ class WavePathHorizontal {
     this.doClosePath = false,
     this.crossAxisEndPoint = 10,
   }) : assert(crossAxisEndPoint != null || doClosePath == false,
-            "if doClosePath is true you must provide an end point (crossAxisEndPoint)");
+  "if doClosePath is true you must provide an end point (crossAxisEndPoint)");
 
   final double width;
   final double amplitude;
@@ -365,7 +412,7 @@ class WavePathHorizontal {
   final Offset startPoint;
   final double crossAxisEndPoint; //*
   final double
-      phaseShift; //* shift the starting value of the wave, in radians, repeats every 2 radians
+  phaseShift; //* shift the starting value of the wave, in radians, repeats every 2 radians
   final bool doClosePath;
 
   Path build() {

@@ -52,55 +52,44 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-  WaterCountdown waterCountdown = new WaterCountdown(duration: Duration(minutes: 15));
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  // bool för att dölja/visa startknapp
+  bool countDownStarted = false;
+
+  WaterCountdown waterCountdown;
+
+  _MyHomePageState() {
+    waterCountdown = new WaterCountdown(
+      // duration är hur lång nedräkningen ska vara. Går att speca t ex Duration(seconds: 10) för att testa en kort nedräkning
+      duration: Duration(minutes: 15),
+      // onComplete är funktionen som körs countdown har nått 00:00
+      onComplete: () {
+        print("done");
+        //TODO Spela upp ett "mötet är slut"-ljud
+        // Guide via https://stackoverflow.com/questions/56377942/flutter-play-sound-on-button-press
+        countDownStarted = false;
+        //Setstate bygger om appen, dvs laddar om state och uppdaterar guit
+        setState(() {});
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     // This method is rerun every time setState is called, for instance as done
     // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
-        appBar: AppBar(
-          // Here we take the value from the MyHomePage object that was created by
-          // the App.build method, and use it to set our appbar title.
+      //Tog bort Appbar så den är mer clean, men kanske ska ha kvar den
+        /*appBar: AppBar(
           title: Text(widget.title),
-        ),
+        ),*/
         body: Center(
           // Center is a layout widget. It takes a single child and positions it
           // in the middle of the parent.
           child: Column(
-            // Column is also a layout widget. It takes a list of children and
-            // arranges them vertically. By default, it sizes itself to fit its
-            // children horizontally, and tries to be as tall as its parent.
-            //
-            // Invoke "debug painting" (press "p" in the console, choose the
-            // "Toggle Debug Paint" action from the Flutter Inspector in Android
-            // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-            // to see the wireframe for each widget.
-            //
-            // Column has various properties to control how it sizes itself and
-            // how it positions its children. Here we use mainAxisAlignment to
-            // center the children vertically; the main axis here is the vertical
-            // axis because Columns are vertical (the cross axis would be
-            // horizontal).
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               // Skapar bubblan som räknar ner, bör läggas i en InkWell så att vi kan definera en onclick osv
-             waterCountdown,
+              waterCountdown,
             ],
           ),
         ),
@@ -110,27 +99,36 @@ class _MyHomePageState extends State<MyHomePage> {
         );
   }
 
-  InkWell buildInkWell() {
-    return InkWell(
-        onTap: (){
-          print("hej");
-        },
-        child: Center(
-        child: Container(
-        child: Center(
-            child: Text(
-          "Start",
-          style: TextStyle(color: Colors.white, fontSize: 38),
-        )),
-        width: 300,
-        height: 300,
-        decoration: BoxDecoration(
-            color: Colors.blue,
-            border: Border.all(
-              color: Colors.blue[500],
-            ),
-            borderRadius: BorderRadius.all(Radius.circular(300))),
-      ),
-    ));
+  Widget buildInkWell() {
+    // Visibility gör så man kan gömma en widget, så la in InkWell i en som är gömd när vi räknar ner
+    return Visibility(
+        visible: !countDownStarted,
+        child: InkWell(
+            onTap: () {
+              waterCountdown.startCountdown();
+              countDownStarted = true;
+              setState(() {});
+            },
+            child: Center(
+              heightFactor: 2.7,
+              child: Container(
+                child: Center(
+                    child: Text(
+                  "Start",
+                  style: TextStyle(color: Colors.white, fontSize: 38),
+                )),
+                width: 290,
+                height: 290,
+                decoration: BoxDecoration(
+                    color: Colors.blueAccent,
+                    border: Border.all(
+                      color: Colors.grey,
+                      width: 10
+                    ),
+                    borderRadius: BorderRadius.all(Radius.circular(300))),
+              ),
+            )
+        )
+    );
   }
 }
