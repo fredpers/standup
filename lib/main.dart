@@ -53,7 +53,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
-
+  WaterCountdown waterCountdown = new WaterCountdown(duration: Duration(minutes: 15));
   void _incrementCounter() {
     setState(() {
       // This call to setState tells the Flutter framework that something has
@@ -100,8 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               // Skapar bubblan som räknar ner, bör läggas i en InkWell så att vi kan definera en onclick osv
-              Container(),
-              WaterCountdown(),
+             waterCountdown,
             ],
           ),
         ),

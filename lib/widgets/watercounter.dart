@@ -3,9 +3,9 @@ import 'dart:ui';
 import 'dart:math' as math;
 
 class WaterCountdown extends StatefulWidget {
-  WaterCountdown({Key key, this.title}) : super(key: key);
+  WaterCountdown({Key key, this.duration}) : super(key: key);
 
-  final String title;
+  final Duration duration;
 
   @override
   _WaterCountdownState createState() => _WaterCountdownState();
@@ -17,8 +17,8 @@ class _WaterCountdownState extends State<WaterCountdown>
   Widget build(BuildContext context) {
     return AutomatedAnimator(
       animateToggle: true,
-      doRepeatAnimation: true,
-      duration: Duration(seconds: 10),
+      doRepeatAnimation: false,
+      duration: widget.duration,
       buildWidget: (double animationPosition) {
         return WaveLoadingBubble(
           foregroundWaveColor: Color(0xFF6AA0E1),
@@ -36,6 +36,7 @@ class _WaterCountdownState extends State<WaterCountdown>
               ) +
               animationPosition * 280,
           waveHeight: 6,
+          duration: widget.duration,
         );
       },
     );
@@ -161,6 +162,7 @@ class WaveLoadingBubble extends StatelessWidget {
     this.foregroundWaveVerticalOffset = 5.0,
     this.backgroundWaveVerticalOffset = 0.0,
     this.period = 0.0,
+    this.duration,
     Key key,
   }) : super(key: key);
 
@@ -174,6 +176,7 @@ class WaveLoadingBubble extends StatelessWidget {
   final double foregroundWaveVerticalOffset;
   final double backgroundWaveVerticalOffset;
   final double period;
+  final Duration duration;
 
   @override
   Widget build(BuildContext context) {
@@ -189,6 +192,7 @@ class WaveLoadingBubble extends StatelessWidget {
         foregroundWaveVerticalOffset: foregroundWaveVerticalOffset,
         backgroundWaveVerticalOffset: backgroundWaveVerticalOffset,
         period: period,
+        duration: duration
       ),
     );
   }
@@ -206,6 +210,7 @@ class WaveLoadingBubblePainter extends CustomPainter {
     this.foregroundWaveVerticalOffset,
     this.backgroundWaveVerticalOffset,
     this.period,
+    this.duration
   })  : foregroundWavePaint = Paint()..color = foregroundWaveColor,
         backgroundWavePaint = Paint()..color = backgroundWaveColor,
         loadingCirclePaint = Paint()
@@ -237,6 +242,7 @@ class WaveLoadingBubblePainter extends CustomPainter {
   final double foregroundWaveVerticalOffset;
   final double backgroundWaveVerticalOffset;
   final double period;
+  final Duration duration;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -252,7 +258,7 @@ class WaveLoadingBubblePainter extends CustomPainter {
       width: bubbleDiameter,
       crossAxisEndPoint: waveBubbleRadius,
       doClosePath: true,
-      phaseShift: period * 2 * 310,
+      phaseShift: period * 2 * duration.inSeconds/3,
     ).build();
 
     Path foregroundWavePath = WavePathHorizontal(
@@ -263,7 +269,7 @@ class WaveLoadingBubblePainter extends CustomPainter {
       width: bubbleDiameter,
       crossAxisEndPoint: waveBubbleRadius,
       doClosePath: true,
-      phaseShift: -period * 2 * 300,
+      phaseShift: -period * 2 *  duration.inSeconds/3,
     ).build();
 
     Path circleClip = Path()
@@ -299,21 +305,32 @@ class WaveLoadingBubblePainter extends CustomPainter {
     canvas.clipPath(circleClip, doAntiAlias: true);
     canvas.drawPath(backgroundWavePath, backgroundWavePaint);
     canvas.drawPath(foregroundWavePath, foregroundWavePaint);
-    drawClockTime(canvas);
+    drawClockTime(canvas, backgroundWavePath);
   }
 
-  void drawClockTime(Canvas canvas) {
-    double secondsPassed = period * 900;
+  void drawClockTime(Canvas canvas, Path backgroundPath) {
+    double secondsPassed = period * duration.inSeconds;
     Duration timeLeft =
-        Duration(minutes: 15) - Duration(seconds: secondsPassed.round());
+        duration - Duration(seconds: secondsPassed.round());
     TextSpan span = new TextSpan(
         text: _printDuration(timeLeft), style: TextStyle(fontSize: 40));
+    TextSpan blackSpan = new TextSpan(
+        text: _printDuration(timeLeft), style: TextStyle(fontSize: 40, color: Colors.black));
     TextPainter tp = new TextPainter(
         text: span,
         textAlign: TextAlign.left,
         textDirection: TextDirection.ltr);
     tp.layout();
+    TextPainter tp2 = new TextPainter(
+        text: blackSpan,
+        textAlign: TextAlign.left,
+        textDirection: TextDirection.ltr);
+    tp2.layout();
+    canvas.save();
+    tp2.paint(canvas, Offset(-55, -25));
+    canvas.clipPath(backgroundPath, doAntiAlias: true);
     tp.paint(canvas, Offset(-55, -25));
+    canvas.restore();
   }
 
   @override
