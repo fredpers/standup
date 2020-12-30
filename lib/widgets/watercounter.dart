@@ -24,6 +24,7 @@ class WaterCountdown extends StatefulWidget {
 class _WaterCountdownState extends State<WaterCountdown>
     with SingleTickerProviderStateMixin {
   AutomatedAnimator automatedAnimator;
+  final player = AudioCache();
 
   _WaterCountdownState(Duration duration, Function onComplete) {
     automatedAnimator = AutomatedAnimator(
@@ -56,6 +57,9 @@ class _WaterCountdownState extends State<WaterCountdown>
 
   void startCountdown() {
     automatedAnimator.startAnimation();
+    Future.delayed(widget.duration-Duration(seconds: 2), () {
+      player.play('audio/time_out.mp3');
+    });
   }
 
   @override
@@ -84,6 +88,7 @@ class AutomatedAnimator extends StatefulWidget {
 
   void startAnimation(){
     animatorState.startAnimation();
+
   }
 
   @override
@@ -106,13 +111,13 @@ class _AutomatedAnimatorState extends State<AutomatedAnimator>
   @override
   void initState() {
     //lägger till AudioCache
-    final player = AudioCache();
+
     super.initState();
     controller = AnimationController(vsync: this, duration: widget.duration)
       ..addListener(() => setState(() {}))
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed) {
-          player.play('audio/time_out.mp3');
+
           controller.reverseDuration = Duration(seconds: 1);
           controller.reverse().then((value) => widget.onComplete());
           widget.animateToggle = false;
