@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:audioplayers/audio_cache.dart';
 import 'widgets/watercounter.dart';
 
 void main() {
@@ -55,17 +55,21 @@ class _MyHomePageState extends State<MyHomePage> {
   // bool för att dölja/visa startknapp
   bool countDownStarted = false;
 
+  //lägger till AudioCache
+  //final player = AudioCache();
+
   WaterCountdown waterCountdown;
 
   _MyHomePageState() {
     waterCountdown = new WaterCountdown(
       // duration är hur lång nedräkningen ska vara. Går att speca t ex Duration(seconds: 10) för att testa en kort nedräkning
-      duration: Duration(minutes: 15),
+      duration: Duration(seconds: 10),
       // onComplete är funktionen som körs countdown har nått 00:00
       onComplete: () {
         print("done");
         //TODO Spela upp ett "mötet är slut"-ljud
         // Guide via https://stackoverflow.com/questions/56377942/flutter-play-sound-on-button-press
+        //player.play('audio/time_out.mp3');
         countDownStarted = false;
         //Setstate bygger om appen, dvs laddar om state och uppdaterar guit
         setState(() {});

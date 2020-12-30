@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:math' as math;
+import 'package:audioplayers/audio_cache.dart';
 
 class WaterCountdown extends StatefulWidget {
   WaterCountdown({Key key, this.duration, this.onComplete}) : super(key: key);
@@ -104,11 +105,14 @@ class _AutomatedAnimatorState extends State<AutomatedAnimator>
 
   @override
   void initState() {
+    //lägger till AudioCache
+    final player = AudioCache();
     super.initState();
     controller = AnimationController(vsync: this, duration: widget.duration)
       ..addListener(() => setState(() {}))
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed) {
+          player.play('audio/time_out.mp3');
           controller.reverseDuration = Duration(seconds: 1);
           controller.reverse().then((value) => widget.onComplete());
           widget.animateToggle = false;
