@@ -6,12 +6,17 @@ import 'package:audioplayers/audio_cache.dart';
 class WaterCountdown extends StatefulWidget {
   WaterCountdown({Key key, this.duration, this.onComplete}) : super(key: key);
 
-  final Duration duration;
+  Duration duration;
   final Function onComplete;
   _WaterCountdownState state;
 
   void startCountdown() {
     state.startCountdown();
+  }
+
+  void resetDuration(Duration duration) {
+    this.duration = duration;
+    state = _WaterCountdownState(duration, onComplete);
   }
 
   @override
@@ -57,7 +62,8 @@ class _WaterCountdownState extends State<WaterCountdown>
 
   void startCountdown() {
     automatedAnimator.startAnimation();
-    Future.delayed(widget.duration-Duration(seconds: 2), () {
+    Future.delayed(widget.duration - Duration(seconds: 1, milliseconds: 500),
+        () {
       player.play('audio/time_out.mp3');
     });
   }
@@ -86,9 +92,8 @@ class AutomatedAnimator extends StatefulWidget {
 
   _AutomatedAnimatorState animatorState;
 
-  void startAnimation(){
+  void startAnimation() {
     animatorState.startAnimation();
-
   }
 
   @override
@@ -117,7 +122,6 @@ class _AutomatedAnimatorState extends State<AutomatedAnimator>
       ..addListener(() => setState(() {}))
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed) {
-
           controller.reverseDuration = Duration(seconds: 1);
           controller.reverse().then((value) => widget.onComplete());
           widget.animateToggle = false;
@@ -167,9 +171,9 @@ double reversingSplitParameters({
   @required double reversalPoint,
 }) {
   assert(reversalPoint <= 1.0 && reversalPoint >= 0.0,
-  "reversalPoint must be a number between 0.0 and 1.0");
+      "reversalPoint must be a number between 0.0 and 1.0");
   final double finalAnimationPosition =
-  breakAnimationPosition(position, numberBreaks);
+      breakAnimationPosition(position, numberBreaks);
 
   if (finalAnimationPosition <= 0.5) {
     return parameterBase - (finalAnimationPosition * 2 * parameterVariation);
@@ -252,21 +256,20 @@ class WaveLoadingBubble extends StatelessWidget {
 }
 
 class WaveLoadingBubblePainter extends CustomPainter {
-  WaveLoadingBubblePainter({this.bubbleDiameter,
-    this.loadingCircleWidth,
-    this.waveInsetWidth,
-    this.waveHeight,
-    this.foregroundWaveColor,
-    this.backgroundWaveColor,
-    this.loadingWheelColor,
-    this.foregroundWaveVerticalOffset,
-    this.backgroundWaveVerticalOffset,
-    this.period,
-    this.duration})
-      : foregroundWavePaint = Paint()
-    ..color = foregroundWaveColor,
-        backgroundWavePaint = Paint()
-          ..color = backgroundWaveColor,
+  WaveLoadingBubblePainter(
+      {this.bubbleDiameter,
+      this.loadingCircleWidth,
+      this.waveInsetWidth,
+      this.waveHeight,
+      this.foregroundWaveColor,
+      this.backgroundWaveColor,
+      this.loadingWheelColor,
+      this.foregroundWaveVerticalOffset,
+      this.backgroundWaveVerticalOffset,
+      this.period,
+      this.duration})
+      : foregroundWavePaint = Paint()..color = foregroundWaveColor,
+        backgroundWavePaint = Paint()..color = backgroundWaveColor,
         loadingCirclePaint = Paint()
           ..shader = SweepGradient(
             colors: [
@@ -308,7 +311,7 @@ class WaveLoadingBubblePainter extends CustomPainter {
       amplitude: waveHeight,
       period: 1.0,
       startPoint:
-      Offset(0.0 - waveBubbleRadius, 0.0 + backgroundWaveVerticalOffset),
+          Offset(0.0 - waveBubbleRadius, 0.0 + backgroundWaveVerticalOffset),
       width: bubbleDiameter,
       crossAxisEndPoint: waveBubbleRadius,
       doClosePath: true,
@@ -319,7 +322,7 @@ class WaveLoadingBubblePainter extends CustomPainter {
       amplitude: waveHeight,
       period: 1.0,
       startPoint:
-      Offset(0.0 - waveBubbleRadius, 0.0 + foregroundWaveVerticalOffset),
+          Offset(0.0 - waveBubbleRadius, 0.0 + foregroundWaveVerticalOffset),
       width: bubbleDiameter,
       crossAxisEndPoint: waveBubbleRadius,
       doClosePath: true,
@@ -342,20 +345,8 @@ class WaveLoadingBubblePainter extends CustomPainter {
           outerWaveBubbleRadius,
           outerWaveBubbleRadius,
           outerWaveBubbleRadius));
-
-    // Path insetCirclePath = Path()..addRRect(RRect.fromLTRBXY(-insetBubbleRadius, -insetBubbleRadius, insetBubbleRadius, insetBubbleRadius, insetBubbleRadius, insetBubbleRadius));
-    Path loadingCirclePath = Path()
-      ..addRRect(RRect.fromLTRBXY(
-          -loadingBubbleRadius,
-          -loadingBubbleRadius,
-          loadingBubbleRadius,
-          loadingBubbleRadius,
-          loadingBubbleRadius,
-          loadingBubbleRadius));
-    Paint outerCirclePaint = Paint()
-      ..color = Colors.black12;
-    Paint innerContainer = Paint()
-      ..color = Colors.white;
+    Paint outerCirclePaint = Paint()..color = Colors.black12;
+    Paint innerContainer = Paint()..color = Colors.white;
     canvas.drawPath(outerCircleClip, outerCirclePaint);
     canvas.drawPath(circleClip, innerContainer);
     canvas.clipPath(circleClip, doAntiAlias: true);
@@ -413,7 +404,7 @@ class WavePathHorizontal {
     this.doClosePath = false,
     this.crossAxisEndPoint = 10,
   }) : assert(crossAxisEndPoint != null || doClosePath == false,
-  "if doClosePath is true you must provide an end point (crossAxisEndPoint)");
+            "if doClosePath is true you must provide an end point (crossAxisEndPoint)");
 
   final double width;
   final double amplitude;
@@ -421,7 +412,7 @@ class WavePathHorizontal {
   final Offset startPoint;
   final double crossAxisEndPoint; //*
   final double
-  phaseShift; //* shift the starting value of the wave, in radians, repeats every 2 radians
+      phaseShift; //* shift the starting value of the wave, in radians, repeats every 2 radians
   final bool doClosePath;
 
   Path build() {
