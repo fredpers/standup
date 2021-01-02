@@ -32,6 +32,8 @@ dependencies:
   liquid_progress_indicator: ^0.3.2
   confetti: ^0.5.4+1
   flutter_picker: ^1.1.5
+  firebase_admob: ^0.10.3
+  firebase_core: ^0.5.3
 
 dev_dependencies:
   flutter_test:

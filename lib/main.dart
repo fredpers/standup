@@ -1,6 +1,8 @@
 import 'package:confetti/confetti.dart';
+import 'package:firebase_admob/firebase_admob.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_picker/Picker.dart';
+import 'package:stand_up/settings.dart';
 import 'widgets/watercounter.dart';
 
 void main() {
@@ -32,17 +34,34 @@ class _MyHomePageState extends State<MyHomePage> {
   // bool för att dölja/visa startknapp
   bool countDownStarted = false;
   ConfettiController _confettiController;
+  /* Om vi vill slå på ads sen är det bara att kommentera ut den här sektionen
+   + lägga till Id'n.
+  BannerAd myBanner = BannerAd(
+    adUnitId: AppSettings.getBannerId(),
+    size: AdSize.smartBanner,
+    listener: (MobileAdEvent event) {
+      print("BannerAd event is $event");
+    },
+  );*/
 
   @override
   void initState() {
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 1),
     );
+    /* Använd för att visa banner ads
+    FirebaseAdMob.instance.initialize(appId: AppSettings.getAppId());
+    myBanner
+      ..load()
+      ..show(anchorType: AnchorType.bottom);
+      */
+    super.initState();
   }
 
   @override
   void dispose() {
     _confettiController.dispose();
+    super.dispose();
   }
 
   WaterCountdown waterCountdown;
@@ -72,31 +91,36 @@ class _MyHomePageState extends State<MyHomePage> {
             // Skapar bubblan som räknar ner, bör läggas i en InkWell så att vi kan definera en onclick osv
             buildInkWell(),
             Visibility(
-                visible: countDownStarted,
-                // Konfettin kommer ifrån vart den här widgeten finns,
-                // när det går att avbryta timern innan ska _confettiController.play(); köras
-                child: ConfettiWidget(
-                    confettiController: _confettiController,
-                    blastDirectionality: BlastDirectionality.explosive,
-                    maxBlastForce: 10,
-                    gravity: 0.002,
-                    emissionFrequency: 0.2,
-                    colors: [
-                      Colors.blueAccent,
-                      Colors.black12,
-                      Colors.blueGrey,
-                      Colors.amberAccent
-                    ],
-                    child: waterCountdown),
+              visible: countDownStarted,
+              // Konfettin kommer ifrån vart den här widgeten finns,
+              // när det går att avbryta timern innan ska _confettiController.play(); köras
+              child: ConfettiWidget(
+                  confettiController: _confettiController,
+                  blastDirectionality: BlastDirectionality.explosive,
+                  maxBlastForce: 10,
+                  gravity: 0.002,
+                  emissionFrequency: 0.2,
+                  colors: [
+                    Colors.blueAccent,
+                    Colors.black12,
+                    Colors.blueGrey,
+                    Colors.amberAccent
+                  ],
+                  child: waterCountdown),
             ),
           ],
         ),
       ),
-      floatingActionButton: IconButton(
-        onPressed: showSettingsDialog, //_showSettingsDialog,
-        icon: Icon(
-          Icons.settings,
-          color: Colors.blueAccent,
+      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
+      floatingActionButton: Visibility(
+        visible: !countDownStarted,
+        child: IconButton(
+          onPressed: showSettingsDialog, //_showSettingsDialog,
+          icon: Icon(
+            Icons.settings,
+            size: 50,
+            color: Colors.blueAccent,
+          ),
         ),
       ),
     );
@@ -149,7 +173,7 @@ class _MyHomePageState extends State<MyHomePage> {
         const NumberPickerColumn(
             begin: 0, end: 59, suffix: Text(' m'), initValue: 15),
         const NumberPickerColumn(
-            begin: 0, end: 59, suffix: Text(' s'), jump: 5, initValue: 0),
+            begin: 5, end: 59, suffix: Text(' s'), jump: 5, initValue: 0),
       ]),
       delimiter: <PickerDelimiter>[
         PickerDelimiter(
