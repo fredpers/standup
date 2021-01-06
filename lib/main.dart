@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_picker/Picker.dart';
 import 'package:stand_up/settings.dart';
 import 'widgets/watercounter.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() {
   runApp(MyApp());
@@ -13,7 +14,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -104,8 +106,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     Colors.blueAccent,
                     Colors.black12,
                     Colors.blueGrey,
-                    Colors.amberAccent
-                  ],
+                    Colors.amberAccent],
                   child: waterCountdown),
             ),
           ],
@@ -115,7 +116,7 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: Visibility(
         visible: !countDownStarted,
         child: IconButton(
-          onPressed: showSettingsDialog, //_showSettingsDialog,
+          onPressed: () => showSettingsDialog(context), //_showSettingsDialog,
           icon: Icon(
             Icons.settings,
             size: 50,
@@ -151,7 +152,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Container(
           child: Center(
             child: Text(
-              "Start",
+              AppLocalizations.of(context).start,
               style: TextStyle(color: Colors.white, fontSize: 38),
             ),
           ),
@@ -167,13 +168,14 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  void showSettingsDialog() {
+  void showSettingsDialog(BuildContext context) {
+
     Picker(
       adapter: NumberPickerAdapter(data: <NumberPickerColumn>[
-        const NumberPickerColumn(
-            begin: 0, end: 59, suffix: Text(' m'), initValue: 15),
-        const NumberPickerColumn(
-            begin: 5, end: 59, suffix: Text(' s'), jump: 5, initValue: 0),
+         NumberPickerColumn(
+            begin: 0, end: 59, suffix: Text(AppLocalizations.of(context).minutes), initValue: 15),
+        NumberPickerColumn(
+            begin: 0, end: 59, suffix: Text(AppLocalizations.of(context).seconds), jump: 5, initValue: 0),
       ]),
       delimiter: <PickerDelimiter>[
         PickerDelimiter(
@@ -185,15 +187,18 @@ class _MyHomePageState extends State<MyHomePage> {
         )
       ],
       hideHeader: true,
-      confirmText: "OK",
-      title: const Text('Select duration'),
+      confirmText: AppLocalizations.of(context).ok,
+      cancelText: AppLocalizations.of(context).cancel,
+      title: Text(AppLocalizations.of(context).select_duration),
       selectedTextStyle: TextStyle(color: Colors.blue),
       onConfirm: (Picker picker, List<int> value) {
         // Set the duration of the countdown
         Duration _duration = Duration(
             minutes: picker.getSelectedValues()[0],
             seconds: picker.getSelectedValues()[1]);
-        waterCountdown.resetDuration(_duration);
+        if(_duration.inSeconds!=0) {
+          waterCountdown.resetDuration(_duration);
+        }
       },
     ).showDialog(context);
   }

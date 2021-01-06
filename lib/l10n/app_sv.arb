@@ -1,0 +1,8 @@
+{
+  "start": "Starta",
+  "ok":"Välj",
+  "select_duration":"Välj tid",
+  "cancel":"Avbryt",
+  "minutes":" m",
+  "seconds":" s"
+}

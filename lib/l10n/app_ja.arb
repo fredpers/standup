@@ -1,0 +1,8 @@
+{
+  "start": "スタート",
+  "ok":"一時停止",
+  "select_duration":"時間を選んでください",
+  "cancel":"キャンセル",
+  "minutes":" 分",
+  "seconds":" 秒"
+}

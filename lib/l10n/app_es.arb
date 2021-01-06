@@ -1,0 +1,8 @@
+{
+  "start": "Comienzo",
+  "ok":"Elegir",
+  "select_duration":"Elige el tiempo",
+  "cancel":"anular",
+  "minutes":" m",
+  "seconds":" s"
+}
