@@ -4,5 +4,6 @@
   "select_duration":"Select duration",
   "cancel":"cancel",
   "minutes":" m",
-  "seconds":" s"
+  "seconds":" s",
+  "stop_timer":"Stop"
 }

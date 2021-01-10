@@ -4,10 +4,12 @@ import 'dart:math' as math;
 import 'package:audioplayers/audio_cache.dart';
 
 class WaterCountdown extends StatefulWidget {
-  WaterCountdown({Key key, this.duration, this.onComplete}) : super(key: key);
+  WaterCountdown({Key key, this.duration, this.onComplete, this.onStop})
+      : super(key: key);
 
   Duration duration;
   final Function onComplete;
+  final Function onStop;
   _WaterCountdownState state;
 
   void startCountdown() {
@@ -16,13 +18,17 @@ class WaterCountdown extends StatefulWidget {
 
   void resetDuration(Duration duration) {
     this.duration = duration;
-    state = _WaterCountdownState(duration, onComplete);
+    state = _WaterCountdownState(duration, onComplete, onStop);
   }
 
   @override
   _WaterCountdownState createState() {
-    state = _WaterCountdownState(duration, onComplete);
+    state = _WaterCountdownState(duration, onComplete, onStop);
     return state;
+  }
+
+  void stopCountdown() {
+    state.stopCountdown();
   }
 }
 
@@ -30,13 +36,16 @@ class _WaterCountdownState extends State<WaterCountdown>
     with SingleTickerProviderStateMixin {
   AutomatedAnimator automatedAnimator;
   final player = AudioCache();
+  bool stopped;
 
-  _WaterCountdownState(Duration duration, Function onComplete) {
+  _WaterCountdownState(
+      Duration duration, Function onComplete, Function onStop) {
     automatedAnimator = AutomatedAnimator(
       animateToggle: false,
       doRepeatAnimation: false,
       duration: duration,
       onComplete: onComplete,
+      onStop: onStop,
       buildWidget: (double animationPosition) {
         return WaveLoadingBubble(
           foregroundWaveColor: Color(0xFF6AA0E1),
@@ -62,10 +71,18 @@ class _WaterCountdownState extends State<WaterCountdown>
 
   void startCountdown() {
     automatedAnimator.startAnimation();
+    stopped = false;
     Future.delayed(widget.duration - Duration(seconds: 1, milliseconds: 500),
         () {
-      player.play('audio/time_out.mp3');
+      if (!stopped) {
+        player.play('audio/time_out.mp3');
+      }
     });
+  }
+
+  void stopCountdown() {
+    stopped = true;
+    automatedAnimator.stopAnimation(player);
   }
 
   @override
@@ -81,6 +98,7 @@ class AutomatedAnimator extends StatefulWidget {
     this.duration = const Duration(milliseconds: 900),
     this.doRepeatAnimation = false,
     this.onComplete,
+    this.onStop,
     Key key,
   }) : super(key: key);
 
@@ -89,11 +107,16 @@ class AutomatedAnimator extends StatefulWidget {
   bool animateToggle;
   final bool doRepeatAnimation;
   final Function onComplete;
+  final Function onStop;
 
   _AutomatedAnimatorState animatorState;
 
   void startAnimation() {
     animatorState.startAnimation();
+  }
+
+  void stopAnimation(AudioCache player) {
+    animatorState.stopAnimation(player);
   }
 
   @override
@@ -108,15 +131,22 @@ class _AutomatedAnimatorState extends State<AutomatedAnimator>
   _AutomatedAnimatorState();
 
   AnimationController controller;
+  Duration stoppedAt;
 
   void startAnimation() {
     controller.forward();
   }
 
+  void stopAnimation(AudioCache player) {
+    print("stopping");
+    player.play('audio/ta_da_success.mp3');
+    stoppedAt = controller.lastElapsedDuration;
+    controller.reverseDuration = Duration(seconds: 2);
+    controller.reverse();
+  }
+
   @override
   void initState() {
-    //lägger till AudioCache
-
     super.initState();
     controller = AnimationController(vsync: this, duration: widget.duration)
       ..addListener(() => setState(() {}))
@@ -125,6 +155,10 @@ class _AutomatedAnimatorState extends State<AutomatedAnimator>
           controller.reverseDuration = Duration(seconds: 1);
           controller.reverse().then((value) => widget.onComplete());
           widget.animateToggle = false;
+        }
+        if(status == AnimationStatus.dismissed){
+          controller.dispose();
+          widget.onStop(PrettyDuration.printDuration(stoppedAt));
         }
       });
     if (widget.animateToggle == true) controller.forward();
@@ -238,19 +272,24 @@ class WaveLoadingBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: WaveLoadingBubblePainter(
-          bubbleDiameter: bubbleDiameter,
-          loadingCircleWidth: loadingCircleWidth,
-          waveInsetWidth: waveInsetWidth,
-          waveHeight: waveHeight,
-          foregroundWaveColor: foregroundWaveColor,
-          backgroundWaveColor: backgroundWaveColor,
-          loadingWheelColor: loadingWheelColor,
-          foregroundWaveVerticalOffset: foregroundWaveVerticalOffset,
-          backgroundWaveVerticalOffset: backgroundWaveVerticalOffset,
-          period: period,
-          duration: duration),
+    return GestureDetector(
+      onTap: () {
+        print("tapped");
+      },
+      child: CustomPaint(
+        painter: WaveLoadingBubblePainter(
+            bubbleDiameter: bubbleDiameter,
+            loadingCircleWidth: loadingCircleWidth,
+            waveInsetWidth: waveInsetWidth,
+            waveHeight: waveHeight,
+            foregroundWaveColor: foregroundWaveColor,
+            backgroundWaveColor: backgroundWaveColor,
+            loadingWheelColor: loadingWheelColor,
+            foregroundWaveVerticalOffset: foregroundWaveVerticalOffset,
+            backgroundWaveVerticalOffset: backgroundWaveVerticalOffset,
+            period: period,
+            duration: duration),
+      ),
     );
   }
 }
@@ -345,7 +384,7 @@ class WaveLoadingBubblePainter extends CustomPainter {
           outerWaveBubbleRadius,
           outerWaveBubbleRadius,
           outerWaveBubbleRadius));
-    Paint outerCirclePaint = Paint()..color = Colors.black12;
+    Paint outerCirclePaint = Paint()..color = Colors.grey;
     Paint innerContainer = Paint()..color = Colors.white;
     canvas.drawPath(outerCircleClip, outerCirclePaint);
     canvas.drawPath(circleClip, innerContainer);
@@ -359,9 +398,10 @@ class WaveLoadingBubblePainter extends CustomPainter {
     double secondsPassed = period * duration.inSeconds;
     Duration timeLeft = duration - Duration(seconds: secondsPassed.round());
     TextSpan span = new TextSpan(
-        text: _printDuration(timeLeft), style: TextStyle(fontSize: 40));
+        text: PrettyDuration.printDuration(timeLeft),
+        style: TextStyle(fontSize: 40));
     TextSpan blackSpan = new TextSpan(
-        text: _printDuration(timeLeft),
+        text: PrettyDuration.printDuration(timeLeft),
         style: TextStyle(fontSize: 40, color: Colors.black));
     TextPainter tp = new TextPainter(
         text: span,
@@ -385,8 +425,10 @@ class WaveLoadingBubblePainter extends CustomPainter {
 
   @override
   bool shouldRebuildSemantics(WaveLoadingBubblePainter oldDelegate) => false;
+}
 
-  String _printDuration(Duration duration) {
+class PrettyDuration {
+  static String printDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, "0");
     String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
     String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));

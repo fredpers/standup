@@ -4,5 +4,6 @@
   "select_duration":"Välj tid",
   "cancel":"Avbryt",
   "minutes":" m",
-  "seconds":" s"
+  "seconds":" s",
+  "stop_timer":"Stoppa"
 }

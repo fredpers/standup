@@ -1,8 +1,9 @@
 {
   "start": "Start",
-  "ok":"Akzeptieren",
+  "ok":"ok",
   "select_duration":"Wähle die Zeit",
-  "cancel":"Stornieren",
+  "cancel":"Abbrechen",
   "minutes":" m",
-  "seconds":" s"
+  "seconds":" s",
+  "stop_timer":"Stop"
 }
