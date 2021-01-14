@@ -2,7 +2,9 @@ import 'package:confetti/confetti.dart';
 import 'package:firebase_admob/firebase_admob.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_picker/Picker.dart';
-import 'package:stand_up/settings.dart';
+import 'package:in_app_review/in_app_review.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'widgets/watercounter.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -11,6 +13,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -33,6 +36,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
+  final InAppReview inAppReview = InAppReview.instance;
   // bool för att dölja/visa startknapp
   bool countDownStarted = false;
   ConfettiController _confettiController;
@@ -77,11 +82,13 @@ class _MyHomePageState extends State<MyHomePage> {
       duration: Duration(minutes: 15),
       // onComplete är funktionen som körs countdown har nått 00:00
       onComplete: () {
+        _incrementCounter();
         countDownStarted = false;
         //Setstate bygger om appen, dvs laddar om state och uppdaterar guit
         setState(() {});
       },
       onStop: (String timeLeft) {
+        _incrementCounter();
         countDownStarted = false;
         successText = timeLeft;
         showSuccess = true;
@@ -148,7 +155,8 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButton: Visibility(
         visible: !countDownStarted,
         child: IconButton(
-          onPressed: () => showSettingsDialog(context), //_showSettingsDialog,
+          onPressed: () {
+            showSettingsDialog(context);}, //_showSettingsDialog,
           icon: Icon(
             Icons.settings,
             size: 50,
@@ -270,6 +278,7 @@ class _MyHomePageState extends State<MyHomePage> {
       title: Text(AppLocalizations.of(context).select_duration),
       selectedTextStyle: TextStyle(color: Colors.blue),
       onConfirm: (Picker picker, List<int> value) {
+        _incrementCounter();
         // Set the duration of the countdown
         Duration _duration = Duration(
             minutes: picker.getSelectedValues()[0],
@@ -280,5 +289,16 @@ class _MyHomePageState extends State<MyHomePage> {
         }
       },
     ).showDialog(context);
+  }
+  // Count up every time the users interact with the app.
+  // After 15 increments we ask for a app review
+  _incrementCounter() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    int counter = (prefs.getInt('counter') ?? 0) + 1;
+    print('Pressed $counter times.');
+    if (counter>15 && await inAppReview.isAvailable()) {
+      inAppReview.requestReview();
+    }
+    await prefs.setInt('counter', counter);
   }
 }

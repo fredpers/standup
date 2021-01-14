@@ -158,7 +158,9 @@ class _AutomatedAnimatorState extends State<AutomatedAnimator>
         }
         if(status == AnimationStatus.dismissed){
           controller.dispose();
-          widget.onStop(PrettyDuration.printDuration(stoppedAt));
+          if(stoppedAt!=null) {
+            widget.onStop(PrettyDuration.printDuration(stoppedAt));
+          }
         }
       });
     if (widget.animateToggle == true) controller.forward();
