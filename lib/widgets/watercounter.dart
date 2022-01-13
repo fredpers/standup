@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'dart:math' as math;
-import 'package:audioplayers/audio_cache.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:water_countdown/theme/colortheme.dart';
 
 class WaterCountdown extends StatefulWidget {
   WaterCountdown({Key key, this.duration, this.onComplete, this.onStop})
@@ -30,12 +31,16 @@ class WaterCountdown extends StatefulWidget {
   void stopCountdown() {
     state.stopCountdown();
   }
+
+  void pauseCountDown(){
+    state.pauseCountDown();
+  }
 }
 
 class _WaterCountdownState extends State<WaterCountdown>
     with SingleTickerProviderStateMixin {
   AutomatedAnimator automatedAnimator;
-  final player = AudioCache();
+
   bool stopped;
 
   _WaterCountdownState(
@@ -48,12 +53,12 @@ class _WaterCountdownState extends State<WaterCountdown>
       onStop: onStop,
       buildWidget: (double animationPosition) {
         return WaveLoadingBubble(
-          foregroundWaveColor: Color(0xFF6AA0E1),
-          backgroundWaveColor: Color(0xFF4D90DF),
-          loadingWheelColor: Color(0xFF77AAEE),
+          foregroundWaveColor:  ColorTheme.getPrimary(),
+          backgroundWaveColor: ColorTheme.getSecondary(),
+          loadingWheelColor:  ColorTheme.getPrimary(),
           period: animationPosition,
-          backgroundWaveVerticalOffset: -140 + animationPosition * 280,
-          foregroundWaveVerticalOffset: -140 +
+          backgroundWaveVerticalOffset:  animationPosition * 280,
+          foregroundWaveVerticalOffset:
               reversingSplitParameters(
                 position: animationPosition,
                 numberBreaks: 6,
@@ -72,17 +77,15 @@ class _WaterCountdownState extends State<WaterCountdown>
   void startCountdown() {
     automatedAnimator.startAnimation();
     stopped = false;
-    Future.delayed(widget.duration - Duration(seconds: 1, milliseconds: 500),
-        () {
-      if (!stopped) {
-        player.play('audio/time_out.mp3');
-      }
-    });
   }
 
   void stopCountdown() {
     stopped = true;
-    automatedAnimator.stopAnimation(player);
+    automatedAnimator.stopAnimation();
+  }
+
+  void pauseCountDown(){
+    automatedAnimator.pauseAnimation();
   }
 
   @override
@@ -115,8 +118,12 @@ class AutomatedAnimator extends StatefulWidget {
     animatorState.startAnimation();
   }
 
-  void stopAnimation(AudioCache player) {
-    animatorState.stopAnimation(player);
+  void stopAnimation() {
+    animatorState.stopAnimation();
+  }
+
+  void pauseAnimation(){
+    animatorState.pauseAnimation();
   }
 
   @override
@@ -132,17 +139,27 @@ class _AutomatedAnimatorState extends State<AutomatedAnimator>
 
   AnimationController controller;
   Duration stoppedAt;
+  Duration pausedAt;
+  final player = AudioCache();
 
   void startAnimation() {
     controller.forward();
   }
 
-  void stopAnimation(AudioCache player) {
-    print("stopping");
+  void stopAnimation() {
     player.play('audio/ta_da_success.mp3');
     stoppedAt = controller.lastElapsedDuration;
     controller.reverseDuration = Duration(seconds: 2);
     controller.reverse();
+  }
+
+  void pauseAnimation(){
+    if(controller.isAnimating) {
+      pausedAt = controller.lastElapsedDuration;
+      controller.stop();
+    } else {
+      controller.forward();
+    }
   }
 
   @override
@@ -152,6 +169,7 @@ class _AutomatedAnimatorState extends State<AutomatedAnimator>
       ..addListener(() => setState(() {}))
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed) {
+          player.play('audio/time_out.mp3');
           controller.reverseDuration = Duration(seconds: 1);
           controller.reverse().then((value) => widget.onComplete());
           widget.animateToggle = false;
@@ -352,9 +370,9 @@ class WaveLoadingBubblePainter extends CustomPainter {
       amplitude: waveHeight,
       period: 1.0,
       startPoint:
-          Offset(0.0 - waveBubbleRadius, 0.0 + backgroundWaveVerticalOffset),
-      width: bubbleDiameter,
-      crossAxisEndPoint: waveBubbleRadius,
+          Offset(0.0-waveBubbleRadius,  0+backgroundWaveVerticalOffset),
+      width: bubbleDiameter-20,
+      crossAxisEndPoint: waveBubbleRadius*2,
       doClosePath: true,
       phaseShift: period * 2 * duration.inSeconds / 3,
     ).build();
@@ -363,9 +381,9 @@ class WaveLoadingBubblePainter extends CustomPainter {
       amplitude: waveHeight,
       period: 1.0,
       startPoint:
-          Offset(0.0 - waveBubbleRadius, 0.0 + foregroundWaveVerticalOffset),
-      width: bubbleDiameter,
-      crossAxisEndPoint: waveBubbleRadius,
+          Offset(0.0-waveBubbleRadius, 0+foregroundWaveVerticalOffset),
+      width: bubbleDiameter-20,
+      crossAxisEndPoint: waveBubbleRadius*2,
       doClosePath: true,
       phaseShift: -period * 2 * duration.inSeconds / 3,
     ).build();
@@ -373,17 +391,17 @@ class WaveLoadingBubblePainter extends CustomPainter {
     Path circleClip = Path()
       ..addRRect(RRect.fromLTRBXY(
           -waveBubbleRadius,
-          -waveBubbleRadius,
+          10,
           waveBubbleRadius,
-          waveBubbleRadius,
+          waveBubbleRadius*2,
           waveBubbleRadius,
           waveBubbleRadius));
     Path outerCircleClip = Path()
       ..addRRect(RRect.fromLTRBXY(
           -outerWaveBubbleRadius,
-          -outerWaveBubbleRadius,
+          0,
           outerWaveBubbleRadius,
-          outerWaveBubbleRadius,
+          outerWaveBubbleRadius*2-10,
           outerWaveBubbleRadius,
           outerWaveBubbleRadius));
     Paint outerCirclePaint = Paint()..color = Colors.grey;
@@ -416,9 +434,9 @@ class WaveLoadingBubblePainter extends CustomPainter {
         textDirection: TextDirection.ltr);
     tp2.layout();
     canvas.save();
-    tp2.paint(canvas, Offset(-55, -25));
+    tp2.paint(canvas, Offset(-55, 110));
     canvas.clipPath(backgroundPath, doAntiAlias: true);
-    tp.paint(canvas, Offset(-55, -25));
+    tp.paint(canvas, Offset(-55, 110));
     canvas.restore();
   }
 

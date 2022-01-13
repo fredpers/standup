@@ -1,19 +1,25 @@
 import 'package:confetti/confetti.dart';
-import 'package:firebase_admob/firebase_admob.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_picker/Picker.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:water_countdown/settings.dart';
+import 'package:water_countdown/theme/colortheme.dart';
+import 'package:water_countdown/widgets/settingsscreen.dart';
 
 import 'widgets/watercounter.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 void main() {
-  runApp(MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
+
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
+      .then((value) => runApp(MyApp()));
 }
 
 class MyApp extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -36,34 +42,82 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   final InAppReview inAppReview = InAppReview.instance;
+  SharedPreferences preferences;
+
   // bool för att dölja/visa startknapp
   bool countDownStarted = false;
   ConfettiController _confettiController;
+  int colorTheme = 2;
 
-  /* Om vi vill slå på ads sen är det bara att kommentera ut den här sektionen
-   + lägga till Id'n.
-  BannerAd myBanner = BannerAd(
+  List<String> testDevices = [];
+
+
+
+  final BannerAd myBanner = BannerAd(
     adUnitId: AppSettings.getBannerId(),
-    size: AdSize.smartBanner,
-    listener: (MobileAdEvent event) {
-      print("BannerAd event is $event");
-    },
-  );*/
+    size: AdSize.fullBanner,
+    request: AdRequest(),
+    listener: BannerAdListener(
+      onAdLoaded: (Ad ad) {
+        print('$BannerAd loaded.');
+      },
+      onAdFailedToLoad: (Ad ad, LoadAdError error) {
+        print('$BannerAd failedToLoad: $error');
+        ad.dispose();
+      },
+      onAdOpened: (Ad ad) => print('$BannerAd onAdOpened.'),
+      onAdClosed: (Ad ad) => print('$BannerAd onAdClosed.'),
+    ),
+  );
+  Container adContainer;
+  AdWidget adWidget;
 
   @override
   void initState() {
     _confettiController = ConfettiController(
       duration: const Duration(seconds: 1),
     );
-    /* Använd för att visa banner ads
-    FirebaseAdMob.instance.initialize(appId: AppSettings.getAppId());
-    myBanner
-      ..load()
-      ..show(anchorType: AnchorType.bottom);
-      */
+    testDevices.add("9B6DA6FFFF197198268891BA324DB8AE");
+
+    RequestConfiguration requestConfiguration
+    = new RequestConfiguration(testDeviceIds: testDevices);
+    MobileAds.instance.updateRequestConfiguration(requestConfiguration);
+    myBanner..load();
+    adWidget = AdWidget(ad: myBanner);
+    adContainer = Container(
+      alignment: Alignment.center,
+      child: adWidget,
+      width: myBanner.size.width.toDouble(),
+      height: myBanner.size.height.toDouble(),
+    );
     super.initState();
+    confettiWidget = buildConfettiWidget();
+    SharedPreferences.getInstance().then((prefs) {
+      preferences = prefs;
+      initDuration(prefs);
+      initColorTheme(prefs);
+      confettiWidget = buildConfettiWidget();
+      setState(() {});
+    });
+  }
+
+  void initColorTheme(SharedPreferences prefs) {
+    int colorTheme = prefs.getInt('colorTheme');
+    if (colorTheme == null) {
+      prefs.setInt('colorTheme', ColorTheme.BLUE);
+    } else {
+      ColorTheme.currentSelection = colorTheme;
+    }
+  }
+
+  void initDuration(SharedPreferences prefs) {
+    int durationInSeconds = prefs.getInt('timeLimit');
+    if (durationInSeconds == null) {
+      prefs.setInt('timeLimit', new Duration(minutes: 15).inSeconds);
+    } else {
+      waterCountdown.resetDuration(new Duration(seconds: durationInSeconds));
+    }
   }
 
   @override
@@ -75,6 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
   WaterCountdown waterCountdown;
   String successText = "";
   bool showSuccess = false;
+  ConfettiWidget confettiWidget;
 
   _MyHomePageState() {
     waterCountdown = new WaterCountdown(
@@ -107,69 +162,93 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            confettiWidget,
+            Visibility(
+              visible: countDownStarted,
+              // Konfettin kommer ifrån vart den här widgeten finns,
+              // när det går att avbryta timern innan ska _confettiController.play(); köras
+              child: Column(children: [
+                InkWell(
+                  onTap: () => waterCountdown.pauseCountDown(),
+                  focusColor: Colors.red,
+                  borderRadius: BorderRadius.circular(500),
+                  child: Container(
+                    width: 300,
+                    height: 300,
+                    child: Column(
+                      children: [
+                        waterCountdown,
+                      ],
+                    ),
+                  ),
+                ),
+                buildStopButton(context)
+              ]),
+            ),
             // Skapar bubblan som räknar ner, bör läggas i en InkWell så att vi kan definera en onclick osv
-            ConfettiWidget(
-                confettiController: _confettiController,
-                blastDirectionality: BlastDirectionality.explosive,
-                maxBlastForce: 10,
-                gravity: 0.002,
-                emissionFrequency: 0.2,
-                colors: [
-                  Colors.blueAccent,
-                  Colors.black12,
-                  Colors.blueGrey,
-                  Colors.amberAccent
-                ],
-                child: Container(
-                  width: 1,
-                  height: 1,
-                )),
             buildInkWell(),
             Visibility(
               visible: showSuccess,
               child: Text(
                 successText,
-                style: TextStyle(color: Color(0xFF6AA0E1), fontSize: 50),
+                style: TextStyle(color: ColorTheme.getPrimary(), fontSize: 50),
               ),
             ),
-            Visibility(
-              visible: countDownStarted,
-              // Konfettin kommer ifrån vart den här widgeten finns,
-              // när det går att avbryta timern innan ska _confettiController.play(); köras
-              child: Container(
-                  child: Column(
-                children: [
-                  waterCountdown,
-                  Container(
-                    width: 1,
-                    height: 150,
-                  ),
-                  buildStopButton(context),
-                ],
-              )),
-            ),
+
           ],
         ),
       ),
+      persistentFooterButtons: [adContainer],
       floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
       floatingActionButton: Visibility(
         visible: !countDownStarted,
         child: IconButton(
           onPressed: () {
-            showSettingsDialog(context);}, //_showSettingsDialog,
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => SettingsScreen()),
+            ).then((value) {
+              waterCountdown.resetDuration(
+                  new Duration(seconds: preferences.getInt('timeLimit')));
+              ColorTheme.currentSelection = preferences.getInt('colorTheme');
+              _incrementCounter();
+              confettiWidget = buildConfettiWidget();
+              setState(() {});
+            });
+          }, //_showSettingsDialog,
           icon: Icon(
             Icons.settings,
             size: 50,
-            color: Color(0xFF6AA0E1),
+            color: ColorTheme.getPrimary(),
           ),
         ),
       ),
     );
   }
 
+  ConfettiWidget buildConfettiWidget() {
+    confettiWidget = null;
+    return ConfettiWidget(
+        confettiController: _confettiController,
+        blastDirectionality: BlastDirectionality.explosive,
+        maxBlastForce: 10,
+        gravity: 0.002,
+        emissionFrequency: 0.2,
+        colors: [
+          ColorTheme.getPrimaryByChoice(colorTheme),
+          Colors.black12,
+          Colors.blueGrey,
+          Colors.amberAccent
+        ],
+        child: Container(
+          width: 1,
+          height: 1,
+        ));
+  }
+
   RaisedButton buildStopButton(BuildContext context) {
     return RaisedButton(
-      color: Color(0xFF6AA0E1),
+      color: ColorTheme.getPrimary(),
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(40.0),
           side: BorderSide(color: Colors.grey, width: 5)),
@@ -241,62 +320,20 @@ class _MyHomePageState extends State<MyHomePage> {
       width: 290,
       height: 290,
       decoration: BoxDecoration(
-        color: Color(0xFF6AA0E1),
+        color: ColorTheme.getPrimary(),
         border: Border.all(color: Colors.grey, width: 10),
         borderRadius: BorderRadius.all(Radius.circular(300)),
       ),
     );
   }
 
-  void showSettingsDialog(BuildContext context) {
-    Picker(
-      adapter: NumberPickerAdapter(data: <NumberPickerColumn>[
-        NumberPickerColumn(
-            begin: 0,
-            end: 59,
-            suffix: Text(AppLocalizations.of(context).minutes),
-            initValue: 15),
-        NumberPickerColumn(
-            begin: 0,
-            end: 59,
-            suffix: Text(AppLocalizations.of(context).seconds),
-            jump: 5,
-            initValue: 0),
-      ]),
-      delimiter: <PickerDelimiter>[
-        PickerDelimiter(
-          child: Container(
-            width: 30.0,
-            alignment: Alignment.center,
-            child: Icon(Icons.more_vert),
-          ),
-        )
-      ],
-      hideHeader: true,
-      confirmText: AppLocalizations.of(context).ok,
-      cancelText: AppLocalizations.of(context).cancel,
-      title: Text(AppLocalizations.of(context).select_duration),
-      selectedTextStyle: TextStyle(color: Colors.blue),
-      onConfirm: (Picker picker, List<int> value) {
-        _incrementCounter();
-        // Set the duration of the countdown
-        Duration _duration = Duration(
-            minutes: picker.getSelectedValues()[0],
-            seconds: picker.getSelectedValues()[1]);
-        if (_duration.inSeconds != 0) {
-          waterCountdown.resetDuration(_duration);
-          setState(() {});
-        }
-      },
-    ).showDialog(context);
-  }
   // Count up every time the users interact with the app.
   // After 15 increments we ask for a app review
   _incrementCounter() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     int counter = (prefs.getInt('counter') ?? 0) + 1;
     print('Pressed $counter times.');
-    if (counter>15 && await inAppReview.isAvailable()) {
+    if (counter > 15 && await inAppReview.isAvailable()) {
       inAppReview.requestReview();
     }
     await prefs.setInt('counter', counter);

@@ -16,13 +16,14 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # 2021-01-14 --build-name 1.0.1 --build-number 2
+# 2022-01-12 --build-name 2.0.0 --build-number 3
 version: 1.0.0+1
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
-  audioplayers: 0.17.0
+  audioplayers: ^0.20.1
   flutter:
     sdk: flutter
   flutter_localizations:
@@ -34,17 +35,16 @@ dependencies:
   cupertino_icons: ^1.0.0
   liquid_progress_indicator: ^0.3.2
   confetti: ^0.5.4+1
-  flutter_picker: ^1.1.5
-  firebase_admob: ^0.10.3
-  firebase_core: ^0.5.3
-  intl:  0.17.0-nullsafety.2
-  in_app_review: ^1.0.4
-  shared_preferences: ^0.5.12+4
+  flutter_picker: ^2.0.2
+  google_mobile_ads: ^1.0.1
+  intl:  0.17.0
+  in_app_review: 2.0.3
+  shared_preferences: ^2.0.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_launcher_icons: ^0.8.1
+  flutter_launcher_icons: ^0.9.2
 ## För att byta ikon, ändra image_path och kör "flutter pub run flutter_launcher_icons:main"
 flutter_icons:
   android: "launcher_icon"

@@ -1,7 +1,10 @@
 {
   "start": "スタート",
+  "settings":"Settings",
   "ok":"開始",
   "select_duration":"時間を選んでください",
+  "select_timer_duration":"時間を選ぶ",
+  "select_color_theme":"色いを選ぶ",
   "cancel":"キャンセル",
   "minutes":" 分",
   "seconds":" 秒",

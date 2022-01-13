@@ -1,7 +1,10 @@
 {
   "start": "Comienzo",
+  "settings":"Settings",
   "ok":"Elegir",
   "select_duration":"Elige el tiempo",
+  "select_timer_duration":"Elige el tiempo",
+  "select_color_theme":"Elige tema de color",
   "cancel":"anular",
   "minutes":" m",
   "seconds":" s",

@@ -1,7 +1,10 @@
 {
   "start": "Starta",
+  "settings":"Inställningar",
   "ok":"Välj",
   "select_duration":"Välj tid",
+  "select_timer_duration":"Välj tid",
+  "select_color_theme":"Välj färgtema",
   "cancel":"Avbryt",
   "minutes":" m",
   "seconds":" s",

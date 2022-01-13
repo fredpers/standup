@@ -1,4 +1,4 @@
-package se.susapp.stand.up
+package se.susapp.water.countdown
 
 import io.flutter.embedding.android.FlutterActivity
 

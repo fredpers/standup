@@ -1,7 +1,10 @@
 {
   "start": "Start",
+  "settings":"Settings",
   "ok":"ok",
   "select_duration":"Select duration",
+  "select_timer_duration":"Select timer duration",
+  "select_color_theme":"Select color theme",
   "cancel":"cancel",
   "minutes":" m",
   "seconds":" s",
